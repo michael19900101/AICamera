@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">AICamera</string>
+    <dimen name="camera_left_margin">20dp</dimen>
+    <dimen name="camera_right_margin">20dp</dimen>
+    <dimen name="camera_bottom_margin">16dp</dimen>
+    <dimen name="camera_top_margin">16dp</dimen>
+    <string name="camera_permission_required">本功能需要相机权限！</string>
+</resources>
