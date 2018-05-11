@@ -5,4 +5,5 @@
     <dimen name="camera_bottom_margin">16dp</dimen>
     <dimen name="camera_top_margin">16dp</dimen>
     <string name="camera_permission_required">本功能需要相机权限！</string>
+    <string name="storage_permission_required">本功能需要文件储存权限！</string>
 </resources>

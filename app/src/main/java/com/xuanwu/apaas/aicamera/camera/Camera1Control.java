@@ -236,7 +236,7 @@ public class Camera1Control implements ICameraControl {
 
         } catch (RuntimeException e) {
             e.printStackTrace();
-            startPreview(false);;
+            startPreview(false);
             takingPicture.set(false);
         }
     }

@@ -5,23 +5,24 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.xuanwu.apaas.aicamera.R;
+import com.xuanwu.apaas.aicamera.util.DimensionUtil;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CameraActivity extends Activity {
 
@@ -30,16 +31,22 @@ public class CameraActivity extends Activity {
 
     public static final String CONTENT_TYPE_GENERAL = "general";
 
-    private static final int REQUEST_CODE_PICK_IMAGE = 100;
     private static final int PERMISSIONS_REQUEST_CAMERA = 800;
     private static final int PERMISSIONS_EXTERNAL_STORAGE = 801;
-
     private File outputFile;
     private String contentType;
 
-    private RelativeLayout takePictureContainer;
+    private ThumbNailAdapter adapter;
     private CameraView cameraView;
     private ImageView takePhotoBtn;
+    private RecyclerView rvThumbnailContainer;
+    private List<Bitmap> thumbNailList = new ArrayList<>();
+    private Handler handler;
+
+    private static String[] PERMISSIONS_STORAGE = {
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE" };
+
     private PermissionCallback permissionCallback = new PermissionCallback() {
         @Override
         public boolean onRequestPermission() {
@@ -53,18 +60,27 @@ public class CameraActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.bd_ocr_activity_camera);
+        verifyStoragePermissions(this);
+        handler = new Handler();
 
-        takePictureContainer = (RelativeLayout) findViewById(R.id.take_picture_container);
         cameraView = (CameraView) findViewById(R.id.camera_view);
         cameraView.getCameraControl().setPermissionCallback(permissionCallback);
         takePhotoBtn = (ImageView) findViewById(R.id.take_photo_button);
         takePhotoBtn.setOnClickListener(takeButtonOnClickListener);
         initParams();
 
-        cameraView.setAutoPictureCallback(autoTakePictureCallback);
+        rvThumbnailContainer = (RecyclerView) findViewById(R.id.rv_thumbnail_container);
+        // 创建一个线性布局管理器
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
+        // 设置布局管理器
+        rvThumbnailContainer.setLayoutManager(layoutManager);
+        // 设置间隔
+        rvThumbnailContainer.addItemDecoration(new SpacesItemDecoration(DimensionUtil.dpToPx(10)));
+        adapter = new ThumbNailAdapter();
+        rvThumbnailContainer.setAdapter(adapter);
     }
 
     @Override
@@ -90,11 +106,6 @@ public class CameraActivity extends Activity {
         }
     }
 
-    private void showCrop() {
-        cameraView.getCameraControl().pause();
-        takePictureContainer.setVisibility(View.INVISIBLE);
-    }
-
     private View.OnClickListener takeButtonOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -102,61 +113,20 @@ public class CameraActivity extends Activity {
         }
     };
 
-    private CameraView.OnTakePictureCallback autoTakePictureCallback = new CameraView.OnTakePictureCallback() {
+    private CameraView.OnTakePictureCallback takePictureCallback = new CameraView.OnTakePictureCallback() {
         @Override
         public void onPictureTaken(final Bitmap bitmap) {
-            CameraThreadPool.execute(new Runnable() {
+
+            handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
-                        bitmap.recycle();
-                        fileOutputStream.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    Intent intent = new Intent();
-                    intent.putExtra(CameraActivity.KEY_CONTENT_TYPE, contentType);
-                    setResult(Activity.RESULT_OK, intent);
-                    finish();
+                    thumbNailList.add(bitmap);
+                    adapter.setmDataset(thumbNailList);
+                    adapter.notifyDataSetChanged();
                 }
             });
         }
     };
-
-    private CameraView.OnTakePictureCallback takePictureCallback = new CameraView.OnTakePictureCallback() {
-        @Override
-        public void onPictureTaken(final Bitmap bitmap) {
-//            handler.post(new Runnable() {
-//                @Override
-//                public void run() {
-//                    takePictureContainer.setVisibility(View.INVISIBLE);
-//                    // TODO 显示bitmap在surfaceview?
-//                    showTakePicture();
-//                }
-//            });
-        }
-    };
-
-    private String getRealPathFromURI(Uri contentURI) {
-        String result;
-        Cursor cursor = null;
-        try {
-            cursor = getContentResolver().query(contentURI, null, null, null, null);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        if (cursor == null) {
-            result = contentURI.getPath();
-        } else {
-            cursor.moveToFirst();
-            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-            result = cursor.getString(idx);
-            cursor.close();
-        }
-        return result;
-    }
     
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
@@ -166,13 +136,6 @@ public class CameraActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_PICK_IMAGE) {
-            if (resultCode == Activity.RESULT_OK) {
-                showCrop();
-            } else {
-                cameraView.getCameraControl().resume();
-            }
-        }
     }
 
     @Override
@@ -190,6 +153,12 @@ public class CameraActivity extends Activity {
                 break;
             }
             case PERMISSIONS_EXTERNAL_STORAGE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("CameraActivity","成功获取文件读写权限");
+                } else {
+                    Toast.makeText(getApplicationContext(), R.string.storage_permission_required, Toast.LENGTH_LONG)
+                            .show();
+                }
             default:
                 break;
         }
@@ -208,5 +177,20 @@ public class CameraActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         this.doClear();
+    }
+
+    private void verifyStoragePermissions(Activity activity) {
+
+        try {
+            //检测是否有写的权限
+            int permission = ActivityCompat.checkSelfPermission(activity,
+                    "android.permission.WRITE_EXTERNAL_STORAGE");
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                // 没有写的权限，去申请写的权限，会弹出对话框
+                ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE,PERMISSIONS_EXTERNAL_STORAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

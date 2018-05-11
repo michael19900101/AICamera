@@ -5,9 +5,14 @@ import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.IntDef;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
+
+import com.xuanwu.apaas.aicamera.util.DimensionUtil;
+import com.xuanwu.apaas.aicamera.util.FileUtil;
+import com.xuanwu.apaas.aicamera.util.ImageUtil;
 
 import java.io.File;
 
@@ -94,12 +99,6 @@ public class CameraView extends FrameLayout {
         cameraControl.takePicture(cameraViewTakePictureCallback);
     }
 
-    private OnTakePictureCallback autoPictureCallback;
-
-    public void setAutoPictureCallback(OnTakePictureCallback callback) {
-        autoPictureCallback = callback;
-    }
-
     private void init() {
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 //            cameraControl = new Camera2Control(getContext());
@@ -127,12 +126,24 @@ public class CameraView extends FrameLayout {
             CameraThreadPool.execute(new Runnable() {
                 @Override
                 public void run() {
-                    // TODO 保存bitmap到本地文件夹
-//                    final int rotation = ImageUtil.getOrientation(data);
-//                    Bitmap bitmap = crop(file, data, rotation);
-//                    callback.onPictureTaken(bitmap);
+                    if(null != data){
+                        String jpegName;
+                        try {
+                            jpegName = FileUtil.saveBitmap(data);
+                            if(!TextUtils.isEmpty(jpegName)){
+                                int width = DimensionUtil.dpToPx(50);
+                                int height = DimensionUtil.dpToPx(50);
+                                // 生成缩略图
+                                Bitmap thumbnailBitmap = ImageUtil.getImageThumbnail(jpegName, width, height);
+                                callback.onPictureTaken(thumbnailBitmap);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
             });
         }
     }
+
 }
