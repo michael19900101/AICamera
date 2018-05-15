@@ -10,6 +10,7 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.bumptech.glide.Glide;
 import com.xuanwu.apaas.aicamera.util.DimensionUtil;
 import com.xuanwu.apaas.aicamera.util.FileUtil;
 import com.xuanwu.apaas.aicamera.util.ImageUtil;
@@ -20,12 +21,13 @@ import java.io.File;
  * 负责，相机的管理。
  */
 public class CameraView extends FrameLayout {
+    private Context context;
 
     /**
      * 照相回调
      */
     interface OnTakePictureCallback {
-        void onPictureTaken(Bitmap bitmap);
+        void onPictureTaken(Bitmap thumbnailBitmap,String filePath);
     }
 
     /**
@@ -70,17 +72,17 @@ public class CameraView extends FrameLayout {
     }
     public CameraView(Context context) {
         super(context);
-        init();
+        init(context);
     }
 
     public CameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(context);
     }
 
     public CameraView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(context);
     }
 
     public void start() {
@@ -99,12 +101,13 @@ public class CameraView extends FrameLayout {
         cameraControl.takePicture(cameraViewTakePictureCallback);
     }
 
-    private void init() {
+    private void init(Context context) {
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 //            cameraControl = new Camera2Control(getContext());
 //        } else {
 //
 //        }
+        this.context = context;
         cameraControl = new Camera1Control(getContext());
 
         displayView = cameraControl.getDisplayView();
@@ -134,8 +137,14 @@ public class CameraView extends FrameLayout {
                                 int width = DimensionUtil.dpToPx(50);
                                 int height = DimensionUtil.dpToPx(50);
                                 // 生成缩略图
-                                Bitmap thumbnailBitmap = ImageUtil.getImageThumbnail(jpegName, width, height);
-                                callback.onPictureTaken(thumbnailBitmap);
+                                Bitmap thumbnailBitmap = Glide.with(context)
+                                        .load(jpegName)
+                                        .asBitmap() //必须
+                                        .centerCrop()
+                                        .into(width, height)
+                                        .get();
+//                                Bitmap thumbnailBitmap = ImageUtil.getImageThumbnail(jpegName, width, height);
+                                callback.onPictureTaken(thumbnailBitmap, jpegName);
                             }
                         } catch (Exception e) {
                             e.printStackTrace();

@@ -9,6 +9,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
+    <ImageView
+        android:id="@+id/stitchImage"
+        android:visibility="gone"
+        android:layout_above="@id/bottomLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </ImageView>
+
     <LinearLayout
         android:id="@+id/bottomLayout"
         android:layout_alignParentBottom="true"
@@ -44,15 +52,15 @@
                 android:background="@drawable/bd_ocr_take_photo_selector"
                 android:clickable="true" />
 
-            <ImageView
-                android:id="@+id/confirm_button"
+            <TextView
+                android:id="@+id/stitch_button"
+                android:text="合成"
+                android:textSize="20sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="@dimen/camera_right_margin"
                 android:layout_alignParentRight="true"
-                android:layout_centerVertical="true"
-                android:clickable="true"
-                android:src="@drawable/bd_ocr_confirm" />
+                android:layout_centerVertical="true" />
         </RelativeLayout>
     </LinearLayout>
 
