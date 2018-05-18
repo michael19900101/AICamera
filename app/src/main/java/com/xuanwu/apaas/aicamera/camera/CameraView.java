@@ -2,6 +2,7 @@ package com.xuanwu.apaas.aicamera.camera;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.IntDef;
@@ -13,7 +14,6 @@ import android.widget.FrameLayout;
 import com.bumptech.glide.Glide;
 import com.xuanwu.apaas.aicamera.util.DimensionUtil;
 import com.xuanwu.apaas.aicamera.util.FileUtil;
-import com.xuanwu.apaas.aicamera.util.ImageUtil;
 
 import java.io.File;
 
@@ -102,13 +102,12 @@ public class CameraView extends FrameLayout {
     }
 
     private void init(Context context) {
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//            cameraControl = new Camera2Control(getContext());
-//        } else {
-//
-//        }
         this.context = context;
-        cameraControl = new Camera1Control(getContext());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            cameraControl = new Camera2Control(getContext());
+        } else {
+            cameraControl = new Camera1Control(getContext());
+        }
 
         displayView = cameraControl.getDisplayView();
         addView(displayView);
