@@ -7,6 +7,5 @@
     <ImageView
         android:id="@+id/iv_thumbnail"
         android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:src="@drawable/bd_ocr_confirm"/>
+        android:layout_height="50dp"/>
 </LinearLayout>

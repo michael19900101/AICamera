@@ -94,7 +94,7 @@ public class CameraActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.bd_ocr_activity_camera);
+        setContentView(R.layout.layout_take_picture);
         verifyStoragePermissions(this);
         handler = new Handler();
 
@@ -271,6 +271,7 @@ public class CameraActivity extends Activity {
                 int	elems = listImage.size();
                 long[] tempobjadr = new long[elems];
                 for	(int i=0; i<elems; i++){
+                    // 把地址传递给底层的C++代码处理,然后更新对应地址的对象
                     tempobjadr[i] = listImage.get(i).getNativeObjAddr();
                 }
                 Mat result = new Mat();
@@ -318,7 +319,7 @@ public class CameraActivity extends Activity {
                 Mat src = new Mat(bitmap.getHeight(), bitmap.getWidth(), CvType.CV_8UC4);
                 Imgproc.resize(src, src, new Size(src.rows()/4, src.cols()/4));
                 Utils.bitmapToMat(bitmap, src);
-                Imgproc.cvtColor(src, src, Imgproc.COLOR_RGBA2BGR);
+                Imgproc.cvtColor(src, src, Imgproc.COLOR_RGBA2BGR);//进行图像彩色空间转换
                 Log.d("CameraActivity", "image height " + src.rows() + ", image width " + src.cols());
                 listImage.add(src);
             }catch (Exception e){
